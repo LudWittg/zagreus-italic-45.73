@@ -1,6 +1,6 @@
 # Zagreus ITALIC 45.73
 
-Zagreus is a 437.8M-parameter causal language model specialized for Italian
+Zagreus is a 437.8M-unique-parameter causal language model specialized for Italian
 multiple-choice evaluation. The promoted checkpoint scored **45.73% accuracy**
 on the 10,000-item official ITALIC evaluation.
 
@@ -40,6 +40,9 @@ Key settings:
 - no benchmark examples in the training pool.
 
 The training run processed 113.3M tokens at 34,785 tokens/s on one H100 80GB.
+The public safetensors inventory reports 560.9M tensor parameters because tied
+input/output embeddings are stored twice; the model has 437.8M unique trainable
+parameters.
 
 ## Reproduction assets
 
@@ -78,4 +81,3 @@ The public checkpoint is copied from immutable private source commit
 `f3582df4c53417115cd8dc8bb074f1628c233a1e`, path
 `candidates/final_push_track_c_seed_20260831_step6564`. Publication does not
 alter `model.safetensors`; the SHA-256 above is the promotion identity.
-

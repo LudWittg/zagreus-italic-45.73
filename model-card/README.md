@@ -14,7 +14,7 @@ tags:
 
 # Zagreus ITALIC 45.73
 
-Zagreus is a 437.8M-parameter Llama-architecture causal model specialized for
+Zagreus is a 437.8M-unique-parameter Llama-architecture causal model specialized for
 Italian multiple-choice questions. It scored **45.73%** on the 10,000-row
 official ITALIC evaluation using the benchmark's five-shot conversational
 prompt and deterministic decoding.
@@ -38,6 +38,10 @@ Weight SHA-256:
 ```text
 0c0a42e642e009d6aff7dd6663707ee0f877218b826ffb1d4ab3abd46687a991
 ```
+
+The Hub safetensors inventory reports 560.9M tensor parameters because tied
+input/output embeddings are stored twice. The model has 437.8M unique trainable
+parameters.
 
 Aggregate evidence and training code are available in the
 [GitHub repository](https://github.com/LudWittg/zagreus-italic-45.73).
@@ -102,4 +106,3 @@ assistant. Results outside the official prompt protocol may differ materially.
 Rare invalid outputs remain possible. The model is distributed for research and
 evaluation; downstream users are responsible for confirming that their use is
 compatible with all applicable upstream data and model terms.
-
