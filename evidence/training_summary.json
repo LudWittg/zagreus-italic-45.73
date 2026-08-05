@@ -1,0 +1,46 @@
+{
+  "protocol": "zagreus-final-push-track-c-online-augmentation",
+  "seed": 20260831,
+  "selected_step": 6564,
+  "selected_weight_sha256": "0c0a42e642e009d6aff7dd6663707ee0f877218b826ffb1d4ab3abd46687a991",
+  "initialization_weight_sha256": "209c861e792c812e98d4287ae5c3cd6eaa6161e38342432cd83868786ec697b6",
+  "run": {
+    "epochs": 4,
+    "optimizer_steps": 6564,
+    "effective_batch_size": 16,
+    "anchor_fraction": 0.2,
+    "tokens": 113309980,
+    "tokens_per_second": 34785.48939151387,
+    "gpu": "NVIDIA H100 80GB HBM3"
+  },
+  "augmentation": {
+    "online_demo_sampling": true,
+    "online_option_permutation": true,
+    "all_six_turns_supervised": true,
+    "training_pool_demos_only": true,
+    "dynamic_padding": true,
+    "microbatch_max_padded_tokens": 16000
+  },
+  "optimizer": {
+    "name": "fused AdamW",
+    "peak_lr": 0.00015,
+    "minimum_lr": 0.000015,
+    "warmup_fraction": 0.05,
+    "weight_decay": 0.05,
+    "clip": 1.0,
+    "cosine_total_steps": 6564
+  },
+  "parameterization": {
+    "trainable_parameters": 437760960,
+    "bf16_autocast": true,
+    "fp32_master_weights": true,
+    "gradient_checkpointing": false,
+    "sparse_lm_head_after_hidden_gather": true
+  },
+  "environment": {
+    "python": "3.12.3",
+    "torch": "2.8.0+cu128",
+    "transformers": "5.13.1"
+  },
+  "official_italic_rows_read_or_used": 0
+}

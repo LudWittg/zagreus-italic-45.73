@@ -1,0 +1,18 @@
+{
+  "protocol": "zagreus-ensemble-v1-official",
+  "candidate_id": "final_push_track_c_seed_20260831_step6564",
+  "candidate_model_weight_sha256": "0c0a42e642e009d6aff7dd6663707ee0f877218b826ffb1d4ab3abd46687a991",
+  "official_commit": "92df420ff686babeea54e217b9f90f8471374916",
+  "official_rows_evaluated": 10000,
+  "candidate_official_accuracy": 0.4573,
+  "valid_count": 9997,
+  "valid_rate": 0.9997,
+  "exact_count": 9995,
+  "exact_rate": 0.9995,
+  "mean_output_chars": 1.0,
+  "max_output_chars": 1,
+  "elapsed_seconds": 268.19282547943294,
+  "harness_hashes_equal": true,
+  "official_rows_in_training": 0,
+  "row_level_outputs_published": false
+}
