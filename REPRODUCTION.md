@@ -51,7 +51,7 @@ included. This table covers the lineage of the released artifact.
 |---|---|
 | Pinocchio v4 item-level KD pool, 11,359 rows | published — `efederici/pinocchio` rev `83c6a063…` is Apache-2.0 |
 | Teacher-labeled T1 payload, 21,000 rows × 4 views | published |
-| Deterministic source-derived replay | published |
+| Deterministic source-derived replay, 7,163 rows | published — built from Kaikki Italian Wiktionary, Universal Dependencies Italian ISDT, and provenance-bearing Italian Wikipedia; see each upstream's license |
 | Decontamination manifests, all stages | published |
 | **Exam-bank rows (Guardia di Finanza)** | **not redistributable — see below** |
 
@@ -118,11 +118,28 @@ rather than averaged away:**
 |---|---:|---|
 | Pinocchio v4 item-level pool | 11,359 | **Prospective** — screened at build time, zero-trigger mechanical tail |
 | Exam bank | 2,550 | **Prospective** — screened at build time |
-| Deterministic source-derived replay | 7,163 | **Retrospective** — see below |
+| Deterministic source-derived replay | 7,163 | **Exclusion by construction + structural guards**, then retrospective audit — see below |
 
-The replay rows derive from the stage-1 scaled-KD pool, whose data manifest
-records `official_italic_read_or_used: false` and carries **no decontamination
-fields**: those rows were not put through the screen as a build-time gate.
+The replay rows derive from the stage-1 scaled-KD pool. That pool was **never
+built from ITALIC**: `stages/01_scaled_kd/zagreus_scaled_kd_data.py` constructs
+a source-group-disjoint split from Kaikki Italian Wiktionary, Universal
+Dependencies Italian ISDT, and provenance-bearing Italian Wikipedia
+candidates. ITALIC is not an input to that module.
+
+Exclusion is enforced, not merely intended. `validate_clean()` in
+`stages/01_scaled_kd/zagreus_scaled_kd_train.py` fails closed at load on any of:
+
+```python
+if "italic" in path.name.casefold():                      # official-looking path
+if str(row.get("id", "")).casefold().startswith("italic:") # official-looking row id
+if str(row.get("source", "")).casefold() == "italic":      # official source
+```
+
+What that pool did **not** receive at build time is the *similarity* screen —
+no Jaccard, containment, or embedding comparison against official rows, and its
+data manifest carries no decontamination fields. Exclusion by construction
+prevents exact overlap but cannot detect paraphrase-level proximity, which is
+why the pool was audited afterwards.
 
 They were later audited with the identical frozen screens and thresholds, with
 no threshold modified for the audit. Over the 10,370-row stage-1 training

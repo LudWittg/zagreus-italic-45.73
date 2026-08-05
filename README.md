@@ -152,7 +152,10 @@ Implementation: `stages/data/zagreus_final_instrument.py`, primitives in
 
 **Coverage differs by component.** The Pinocchio pool (11,359 rows) and exam
 bank (2,550) were screened prospectively at build time. The deterministic
-replay slice (7,163) was **not** gated at build time and was audited
+replay slice (7,163) was built from Kaikki Italian Wiktionary, UD Italian ISDT
+and Italian Wikipedia with ITALIC never an input, and is guarded at load by
+`validate_clean()`, which rejects official-looking paths, row ids and sources.
+It received no *similarity* screen at build time and was audited
 retrospectively with the identical screens: **0 normalized-exact matches** and
 6 lexical hits across the 10,370-row stage-1 split. Full breakdown and the
 embedding-flag analysis are in [REPRODUCTION.md](REPRODUCTION.md#decontamination).
