@@ -215,8 +215,33 @@ The reference environment was Python 3.12.3, CUDA 12.8, PyTorch 2.8.0,
 Transformers 5.13.1, and one H100 80GB. On RunPod, the source run used
 `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404`.
 
+Install with [uv](https://github.com/astral-sh/uv) for a fast, resolved
+environment:
+
 ```bash
-python -m pip install -r requirements-training.txt
+uv venv --python 3.12
+source .venv/bin/activate
+uv pip install -r requirements-training.txt
+```
+
+On the reference RunPod image torch 2.8.0+cu128 is preinstalled and the pin is
+already satisfied. On a fresh machine, PyPI's default `torch==2.8.0` wheel may
+carry a different CUDA build, so point uv at the CUDA 12.8 index to match the
+reference environment:
+
+```bash
+uv pip install -r requirements-training.txt \
+  --extra-index-url https://download.pytorch.org/whl/cu128
+```
+
+`python -m pip install -r requirements-training.txt` remains equivalent if uv
+is unavailable — the pins, not the installer, define the environment. To harden
+further, `uv pip compile requirements-training.txt -o requirements-training.lock`
+produces a fully-pinned transitive lock.
+
+Then prepare the data and run:
+
+```bash
 python scripts/prepare_reproduction.py --output reproduction
 
 python scripts/train.py \
@@ -269,7 +294,7 @@ Official row-level outputs and benchmark fixtures are intentionally excluded.
 ## Inference
 
 ```bash
-python -m pip install -r requirements-serving.txt
+uv pip install -r requirements-serving.txt   # or: python -m pip install -r requirements-serving.txt
 python examples/inference.py
 ```
 
