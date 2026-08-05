@@ -133,6 +133,30 @@ item-level screening, officially answer-keyed exam banks, and deterministic
 source-derived replay. The only generated artifact is the teacher's soft
 probability distribution over answer letters.
 
+### Decontamination
+
+No official ITALIC question, option, answer, or demonstration was used for
+training or teacher labeling at any stage. The frozen screen, applied against
+all 10,000 official rows, is:
+
+1. recursive HTML-entity decoding and normalized exact match;
+2. MinHash Jaccard ≥ 0.70 on word trigrams;
+3. content-word containment ≥ 0.80 with ≥ 8 content words;
+4. pinned MiniLM `e8f8c211226b894fcb81acc59f3b34ba3efd5f42` cosine ≥ 0.80 on
+   **both** the question and the question-plus-sorted-options surfaces;
+5. a mechanical tail recheck required to return zero triggers.
+
+Implementation: `stages/data/zagreus_final_instrument.py`, primitives in
+`stages/data/zagreus_exam_bank_v1.py`, item-level driver in
+`stages/data/zagreus_pinocchio_v4_itemlevel.py`.
+
+**Coverage differs by component.** The Pinocchio pool (11,359 rows) and exam
+bank (2,550) were screened prospectively at build time. The deterministic
+replay slice (7,163) was **not** gated at build time and was audited
+retrospectively with the identical screens: **0 normalized-exact matches** and
+6 lexical hits across the 10,370-row stage-1 split. Full breakdown and the
+embedding-flag analysis are in [REPRODUCTION.md](REPRODUCTION.md#decontamination).
+
 ### Reproducing the teacher targets
 
 `scripts/labeling/` contains the byte-identical code that produced the teacher

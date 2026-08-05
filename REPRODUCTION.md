@@ -101,10 +101,45 @@ themselves being redistributed.
 ## Decontamination
 
 No official ITALIC question, option, answer, or demonstration was used for
-training or teacher labeling at any stage. Every training row passed recursive
-HTML-entity decoding and normalized exact match, MinHash Jaccard ≥ 0.70,
-content-word containment ≥ 0.80 with ≥ 8 content words, and pinned MiniLM
+training or teacher labeling at any stage.
+
+The frozen screen is: recursive HTML-entity decoding and normalized exact
+match; MinHash Jaccard ≥ 0.70 on word trigrams; content-word containment ≥ 0.80
+with ≥ 8 content words; and pinned MiniLM
 (`e8f8c211226b894fcb81acc59f3b34ba3efd5f42`) cosine ≥ 0.80 on **both** the
-question and question-plus-sorted-options surfaces, with a zero-trigger
-mechanical tail recheck. The screen implementation is
-`stages/data/zagreus_final_instrument.py`.
+question and the question-plus-sorted-options surfaces. Implementation:
+`stages/data/zagreus_final_instrument.py`, with primitives in
+`stages/data/zagreus_exam_bank_v1.py`.
+
+**Coverage is not uniform across the pool, and the difference is stated here
+rather than averaged away:**
+
+| Component | Rows | Screening |
+|---|---:|---|
+| Pinocchio v4 item-level pool | 11,359 | **Prospective** — screened at build time, zero-trigger mechanical tail |
+| Exam bank | 2,550 | **Prospective** — screened at build time |
+| Deterministic source-derived replay | 7,163 | **Retrospective** — see below |
+
+The replay rows derive from the stage-1 scaled-KD pool, whose data manifest
+records `official_italic_read_or_used: false` and carries **no decontamination
+fields**: those rows were not put through the screen as a build-time gate.
+
+They were later audited with the identical frozen screens and thresholds, with
+no threshold modified for the audit. Over the 10,370-row stage-1 training
+split:
+
+| Check | Hits |
+|---|---:|
+| Normalized exact match | **0** |
+| Lexical (Jaccard / containment) | **6** |
+| Embedding ≥ 0.80 | 2,034 |
+
+Zero exact overlap. The six lexical hits were identified retrospectively and
+were not retroactively removed from an already-trained ancestor checkpoint.
+The 2,034 embedding flags concentrate in formulaic language sectors
+(synonyms/antonyms 83.9%, lexicon 66.2%) versus 1.5–3.0% for every factual
+sector; a companion item-level analysis found zero identical option sets among
+flagged rows, indicating template similarity rather than item overlap.
+
+The audit is reproducible from the published screens against the published
+stage-1 pool.
