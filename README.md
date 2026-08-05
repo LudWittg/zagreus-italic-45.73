@@ -110,19 +110,22 @@ included.
 
 ### Total compute
 
-| Component | Measured | GPU-hours |
-|---|---:|---:|
-| Training run, four epochs, 6,564 steps | 3,257.39 s | 0.905 |
-| Teacher target generation — `google/gemma-4-E4B-it` revision `ee0ef6023621cff504d758262d4e04895a5af4a2`, 21,000 rows × 4 views | 0.985 h | 0.985 |
-| Corpus construction and decontamination | CPU only | 0 |
-| Synthetic question generation | none | 0 |
-| **Total** | | **1.890** |
+The released checkpoint is the terminal link of a five-stage chain from
+`mii-llm/zagreus-0.4B-ita`. Full per-stage accounting, code, and checkpoint
+hashes are in [REPRODUCTION.md](REPRODUCTION.md).
 
-Both measured figures are wall time from the run manifests, not estimates:
-the training run from `evidence/training_summary.json`, the teacher labeling
-pass from its phase ledger. Figures cover the released checkpoint's own
-training and the data generation it consumed; initialization is the published
-frozen checkpoint `209c861e…` listed above.
+| Component | GPU-hours |
+|---|---:|
+| Stage 1–5 training, base to released checkpoint | 5.070 |
+| Teacher target generation (`google/gemma-4-E4B-it` rev `ee0ef602…`, 21,000 rows × 4 views) | 0.985 |
+| Corpus construction and decontamination | 0 — CPU only |
+| Synthetic question generation | 0 — none |
+| **Total (measured)** | **6.055** |
+
+The terminal run alone is 0.905 GPU-hours (3,257.39 s). Stages 1 and 2 also
+used soft-KD and required their own labeling passes, which are not separately
+itemised in the campaign records; including them places the full total below
+7.6 GPU-hours. All figures are measured wall time from run manifests.
 
 **No synthetic question content was generated for this model.** All training
 rows come from real, decontaminated sources — `efederici/pinocchio` under
