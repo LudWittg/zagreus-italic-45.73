@@ -1,0 +1,18 @@
+{
+  "reproduction_bundle": "mcsp/zagreus-italic-45.73-reproduction",
+  "seed": 20260831,
+  "epochs": 4,
+  "batch_size": 16,
+  "checkpoint_interval": 500,
+  "max_length": 4096,
+  "pool_multiple": 8,
+  "max_padded_tokens": 16000,
+  "optimizer_steps": 6564,
+  "peak_learning_rate": 0.00015,
+  "minimum_learning_rate": 0.000015,
+  "warmup_fraction": 0.05,
+  "weight_decay": 0.05,
+  "gradient_clip": 1.0,
+  "expected_elapsed_seconds": 3257.392152812332,
+  "expected_terminal_weight_sha256": "0c0a42e642e009d6aff7dd6663707ee0f877218b826ffb1d4ab3abd46687a991"
+}

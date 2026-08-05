@@ -351,11 +351,11 @@ def main() -> None:
     parser.add_argument("--base-model", type=Path, required=True)
     parser.add_argument("--signal", type=Path, required=True)
     parser.add_argument("--anchors", type=Path, required=True)
-    parser.add_argument("--dev", type=Path, required=True)
-    parser.add_argument("--prefix", type=Path, required=True)
+    parser.add_argument("--dev", type=Path)
+    parser.add_argument("--prefix", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--epochs", type=int, default=6)
-    parser.add_argument("--batch-size", type=int, default=32)
+    parser.add_argument("--epochs", type=int, default=4)
+    parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--checkpoint-interval", type=int, default=500)
     parser.add_argument("--max-length", type=int, default=4096)
     parser.add_argument("--eval-batch-size", type=int, default=32)
@@ -363,24 +363,38 @@ def main() -> None:
     parser.add_argument("--max-padded-tokens", type=int, default=16000)
     parser.add_argument("--smoke-steps", type=int, default=0)
     parser.add_argument("--skip-eval-smoke", action="store_true")
+    parser.add_argument(
+        "--skip-eval",
+        action="store_true",
+        help="Train and save the terminal checkpoint without loading selection data.",
+    )
     args = parser.parse_args()
     if transformers.__version__ != "5.13.1" or not torch.cuda.is_bf16_supported():
         raise RuntimeError("pinned Transformers 5.13.1 and BF16 CUDA required")
-    hashes = {
+    hashes: dict[str, str] = {
         "init": verify(args.base_model / "model.safetensors", EXPECTED_INIT),
         "signal": verify(args.signal, EXPECTED_SIGNAL),
         "anchors": verify(args.anchors, EXPECTED_ANCHORS),
-        "dev": verify(args.dev, EXPECTED_DEV),
-        "prefix": verify(args.prefix, EXPECTED_PREFIX),
     }
-    if any(term in str(path).casefold() for path in (args.signal, args.anchors, args.dev) for term in ("5_shots", "harness", "italic.jsonl")):
+    if args.skip_eval:
+        hashes.update({"dev": "not_loaded", "prefix": "not_loaded"})
+    else:
+        if args.dev is None or args.prefix is None:
+            raise RuntimeError("--dev and --prefix are required unless --skip-eval is set")
+        hashes.update({"dev": verify(args.dev, EXPECTED_DEV), "prefix": verify(args.prefix, EXPECTED_PREFIX)})
+    screened_paths = [args.signal, args.anchors]
+    if args.dev is not None:
+        screened_paths.append(args.dev)
+    if any(term in str(path).casefold() for path in screened_paths for term in ("5_shots", "harness", "italic.jsonl")):
         raise RuntimeError("denylisted training path")
     signal = legacy.read_jsonl(args.signal)
     anchors = legacy.read_jsonl(args.anchors)
-    dev = legacy.read_jsonl(args.dev)
-    prefix = json.loads(args.prefix.read_text())
-    if (len(signal), len(anchors), len(dev), len(prefix)) != (21000, 3000, 600, 11):
+    dev = [] if args.skip_eval else legacy.read_jsonl(args.dev)
+    prefix = [] if args.skip_eval else json.loads(args.prefix.read_text())
+    if (len(signal), len(anchors)) != (21000, 3000):
         raise RuntimeError("input shape drift")
+    if not args.skip_eval and (len(dev), len(prefix)) != (600, 11):
+        raise RuntimeError("selection input shape drift")
     if any(str(row.get("source", "")).casefold() == "italic" for row in signal + anchors):
         raise RuntimeError("official row reached Track C")
     random.seed(args.seed); torch.manual_seed(args.seed); torch.cuda.manual_seed_all(args.seed)
@@ -391,7 +405,7 @@ def main() -> None:
         tokenizer.pad_token = tokenizer.eos_token
     tokenizer.chat_template = PLAIN_TEMPLATE
     plain_ids, spaced_ids = legacy.candidate_ids(tokenizer)
-    dev_label_ids = probe.answer_token_ids(tokenizer)
+    dev_label_ids = None if args.skip_eval else probe.answer_token_ids(tokenizer)
     model = AutoModelForCausalLM.from_pretrained(args.base_model, dtype=torch.bfloat16, low_cpu_mem_usage=True, local_files_only=True).cuda()
     for parameter in model.parameters():
         parameter.data = parameter.data.float(); parameter.requires_grad_(True)
@@ -412,7 +426,9 @@ def main() -> None:
     legacy.MARGINAL_CEILING = 0.10
     legacy.NLL_CEILING = 1.4523645305633546 + 0.15
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    if args.skip_eval_smoke:
+    if args.skip_eval:
+        baseline = {}
+    elif args.skip_eval_smoke:
         if not args.smoke_steps:
             raise RuntimeError("--skip-eval-smoke is permitted only with --smoke-steps")
         baseline = {}
@@ -492,7 +508,7 @@ def main() -> None:
             if step % 25 == 0:
                 elapsed = time.perf_counter() - started
                 print(f"train seed={args.seed} epoch={epoch} step={step}/{total_steps} tok_s={tokens/elapsed:.1f} batch_s={time.perf_counter()-batch_started:.3f}", flush=True)
-            if not args.skip_eval_smoke and (step % args.checkpoint_interval == 0 or step == total_steps):
+            if not args.skip_eval and not args.skip_eval_smoke and (step % args.checkpoint_interval == 0 or step == total_steps):
                 checkpoint("terminal" if step == total_steps else "interval")
             if step >= total_steps:
                 stop = True; break
@@ -500,6 +516,13 @@ def main() -> None:
             break
     if step != total_steps:
         raise RuntimeError(f"optimizer-step drift: {step} != {total_steps}")
+    if args.skip_eval:
+        terminal_weight_hash = legacy.save_model(model, tokenizer, args.output_dir / "terminal_model")
+        terminal = {
+            "checkpoint": "terminal_without_selection_eval",
+            "model_path": str(args.output_dir / "terminal_model"),
+            "weight_sha256": terminal_weight_hash,
+        }
     count = max(1, int(losses["batches"]))
     manifest = {
         "protocol": "zagreus-final-push-track-c-online-augmentation",
@@ -507,7 +530,7 @@ def main() -> None:
         "official_italic_rows_read_or_used": 0,
         "seed": args.seed,
         "hashes": hashes,
-        "selection_rule": "matched_instrument_canonical_accuracy_only",
+        "selection_rule": "terminal_checkpoint" if args.skip_eval else "matched_instrument_canonical_accuracy_only",
         "gates": {"interface_only": True, "nll_divergence_ceiling": 1.6023645305633545},
         "augmentation": {"online_demo_sampling": True, "online_option_permutation": True, "training_pool_demos_only": True, "all_six_turns_supervised": True, "dynamic_padding": True, "length_bucket_pool_multiple": args.pool_multiple, "effective_batch_size": args.batch_size, "microbatch_max_padded_tokens": args.max_padded_tokens},
         "optimizer": {"name": "fused AdamW", "peak_lr": 1.5e-4, "minimum_lr": 1.5e-5, "warmup_fraction": 0.05, "cosine_total_steps": total_steps, "weight_decay": 0.05, "clip": 1.0},

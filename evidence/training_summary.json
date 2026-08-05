@@ -11,8 +11,11 @@
     "anchor_fraction": 0.2,
     "tokens": 113309980,
     "tokens_per_second": 34785.48939151387,
+    "elapsed_seconds": 3257.392152812332,
+    "elapsed_human": "54 minutes 17 seconds",
     "gpu": "NVIDIA H100 80GB HBM3"
   },
+  "reproduction_bundle": "mcsp/zagreus-italic-45.73-reproduction",
   "augmentation": {
     "online_demo_sampling": true,
     "online_option_permutation": true,
