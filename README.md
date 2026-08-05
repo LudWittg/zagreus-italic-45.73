@@ -130,6 +130,42 @@ item-level screening, officially answer-keyed exam banks, and deterministic
 source-derived replay. The only generated artifact is the teacher's soft
 probability distribution over answer letters.
 
+### Reproducing the teacher targets
+
+`scripts/labeling/` contains the byte-identical code that produced the teacher
+targets consumed by the training run. Hashes are the ones recorded in the
+labeling job's own preflight manifest:
+
+| File | SHA-256 (first 16) | Role |
+|---|---|---|
+| `zagreus_propositional_t1.py` | `a02d4854722f964c` | Labeling driver; enforces the locked teacher and I5 guards |
+| `zagreus_scaled_kd_teacher.py` | `05e86b6de26baf8c` | Gemma inference core; emits four-view answer-letter log-probabilities |
+| `zagreus_language_synthetic_data.py` | `aa10540f81989e75` | Imported **only** for `prompt_hash` and `sha256_file`; no generation path is used |
+| `runpod_propositional_t1_job.py` | `e89573a42ccde71f` | Orchestration wrapper and preflight hash manifest |
+
+The teacher identity is hardcoded and locked in
+`zagreus_scaled_kd_teacher.py`:
+
+```python
+MODEL_ID       = "google/gemma-4-E4B-it"
+MODEL_REVISION = "ee0ef6023621cff504d758262d4e04895a5af4a2"
+```
+
+Passing a different model or revision raises
+`"The teacher model and revision are locked for this experiment"`.
+
+For each row the teacher scores four deterministic option permutations derived
+from the row id, restricts the final-position logits to the displayed answer
+letters, and stores `log_softmax` over those candidates. Only the letter
+distribution is retained; no free text is generated and no row content is
+modified. Input paths that look like official benchmark files are rejected
+before any inference runs.
+
+The third file is included because byte-identical reproduction requires the
+import to resolve. Only its two hashing helpers are reachable from this path —
+its generation routines are not called by the labeling pipeline and produced
+none of this model's training data.
+
 ### Efficient supervised-position projection
 
 The transformer processes every prompt token, but only seven positions require
