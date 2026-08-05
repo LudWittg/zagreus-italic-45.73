@@ -95,6 +95,20 @@ frozen initialization checkpoint, dependency versions, and terminal training
 command. The reported 54 minutes is measured wall time for the full four-epoch
 training job; model download and official evaluation are not included.
 
+### Total compute
+
+| Component | GPU-hours |
+|---|---:|
+| Training run, four epochs, 6,564 steps | 0.905 |
+| Teacher target generation (`google/gemma-4-E4B-it`, rev `ee0ef602…`, 21,000 rows × 4 views) | 0.985 |
+| Corpus construction and decontamination (CPU only) | 0 |
+| Synthetic question generation (none) | 0 |
+| **Total** | **1.890** |
+
+No synthetic question content was generated. Training rows come from real,
+decontaminated sources; the only generated artifact is the teacher's soft
+probability distribution over answer letters.
+
 ## Use
 
 The model expects a system message, five `(user, assistant)` demonstrations,

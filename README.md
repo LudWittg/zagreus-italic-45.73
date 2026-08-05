@@ -108,6 +108,28 @@ The 54-minute figure is measured wall time for the released checkpoint's full
 four-epoch training job; model download and the official evaluation are not
 included.
 
+### Total compute
+
+| Component | Measured | GPU-hours |
+|---|---:|---:|
+| Training run, four epochs, 6,564 steps | 3,257.39 s | 0.905 |
+| Teacher target generation — `google/gemma-4-E4B-it` revision `ee0ef6023621cff504d758262d4e04895a5af4a2`, 21,000 rows × 4 views | 0.985 h | 0.985 |
+| Corpus construction and decontamination | CPU only | 0 |
+| Synthetic question generation | none | 0 |
+| **Total** | | **1.890** |
+
+Both measured figures are wall time from the run manifests, not estimates:
+the training run from `evidence/training_summary.json`, the teacher labeling
+pass from its phase ledger. Figures cover the released checkpoint's own
+training and the data generation it consumed; initialization is the published
+frozen checkpoint `209c861e…` listed above.
+
+**No synthetic question content was generated for this model.** All training
+rows come from real, decontaminated sources — `efederici/pinocchio` under
+item-level screening, officially answer-keyed exam banks, and deterministic
+source-derived replay. The only generated artifact is the teacher's soft
+probability distribution over answer letters.
+
 ### Efficient supervised-position projection
 
 The transformer processes every prompt token, but only seven positions require
